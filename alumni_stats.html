@@ -5,52 +5,77 @@
   <title>BSCS Alumni — Stats & Charts (updated)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; margin: 18px; color:#222 }
+    /* Page and centered container */
+    body { font-family: Arial, Helvetica, sans-serif; margin: 0; color:#222; background: #fff; }
+    .container { max-width: 1100px; margin: 18px auto; padding: 0 16px; }
+
     h1,h2 { margin: 8px 0; }
-    .charts { display:flex; flex-wrap:wrap; gap:24px; }
-    .chart-card { flex: 1 1 480px; min-width:320px; padding:12px; border:1px solid #e0e0e0; border-radius:8px; background:#fafafa; }
-    canvas { width:100% !important; height:320px !important; }
+    .charts { display:flex; flex-wrap:wrap; gap:24px; justify-content:center; }
+    /* Constrain each card so charts don't stretch to full page width */
+    .chart-card {
+      flex: 0 1 480px;
+      width: 100%;
+      max-width: 480px;
+      min-width: 320px;
+      padding:12px;
+      border:1px solid #e0e0e0;
+      border-radius:8px;
+      background:#fafafa;
+      box-sizing: border-box;
+    }
+    /* Canvas fills its card but the card itself is constrained */
+    canvas { width:100%; height:320px; display:block; }
+
     table { border-collapse: collapse; width:100%; margin-top:12px }
     th,td { text-align:left; padding:6px 8px; border-bottom:1px solid #eee; font-size:14px; }
     .note { font-size:13px; color:#555; margin-top:12px; }
     .loader { color:#666; margin-top:12px; }
     pre.small { font-size:12px; color:#666; background:#f8f8f8; padding:8px; border-radius:6px; }
+
+    /* Make layout more compact on very small screens */
+    @media (max-width: 520px) {
+      .container { padding: 0 8px; }
+      .chart-card { min-width: auto; max-width: 100%; }
+      canvas { height:260px; }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <h1>BSCS Alumni — Summary (updated rules)</h1>
-  <p class="note">
-    Data loaded from the CSV in this repo (commit: 12904fe4...). Classification rules updated per your instructions:
-    - The script prefers the "status 2 years after graduation" column (flexible matching) to determine employed status.
-    - The "position" column is used as the job description to decide whether a job is related to computer science.
-    - If "No. of Employment" is non-zero and the status column value is "employed", that alumni is treated as employed.
-    - "Research assistant" at MSU-IIT is explicitly counted as related to computer science.
-  </p>
+  <div class="container">
+    <h1>BSCS Alumni — Summary (updated rules)</h1>
+    <p class="note">
+      Data loaded from the CSV in this repo (commit: 12904fe4...). Classification rules updated per your instructions:
+      - The script prefers the "status 2 years after graduation" column (flexible matching) to determine employed status.
+      - The "position" column is used as the job description to decide whether a job is related to computer science.
+      - If "No. of Employment" is non-zero and the status column value is "employed", that alumni is treated as employed.
+      - "Research assistant" at MSU-IIT is explicitly counted as related to computer science.
+    </p>
 
-  <div id="status" class="loader">Loading and processing CSV — please wait...</div>
+    <div id="status" class="loader">Loading and processing CSV — please wait...</div>
 
-  <div class="charts" id="charts" style="display:none">
-    <div class="chart-card">
-      <h2>Graduates per Academic Year & Semester</h2>
-      <canvas id="graduatesChart"></canvas>
+    <div class="charts" id="charts" style="display:none">
+      <div class="chart-card">
+        <h2>Graduates per Academic Year & Semester</h2>
+        <canvas id="graduatesChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h2>Employment status per Academic Year & Semester</h2>
+        <canvas id="employmentStackedChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h2>Employed: Related to CS vs Not related (overall)</h2>
+        <canvas id="relatedChart"></canvas>
+      </div>
     </div>
 
-    <div class="chart-card">
-      <h2>Employment status per Academic Year & Semester</h2>
-      <canvas id="employmentStackedChart"></canvas>
+    <div id="tables" style="display:none; margin-top:18px">
+      <h2>Raw counts</h2>
+      <div id="countsTable"></div>
     </div>
-
-    <div class="chart-card">
-      <h2>Employed: Related to CS vs Not related (overall)</h2>
-      <canvas id="relatedChart"></canvas>
-    </div>
-  </div>
-
-  <div id="tables" style="display:none; margin-top:18px">
-    <h2>Raw counts</h2>
-    <div id="countsTable"></div>
   </div>
 
 <script>
