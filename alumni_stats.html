@@ -91,6 +91,15 @@
     'system','systems','devops','mobile','android','ios','qa','quality assurance','research assistant','researcher','msu-iit','msu iit','msuiit','ai','machine learning','ml','data scientist'
   ];
 
+  // Explicitly NOT CS-related position keywords (user provided)
+  const csNotRelatedKeywords = [
+    'sharepoint lead',
+    'in-house artist','in house artist',
+    'assistant colorist',
+    'real estate data entry clerk',
+    'administrative support ii','administrative support 2','administrative support'
+  ];
+
   // Helper: find a CSV field key by regex
   function findKeyByRegex(row, regexes) {
     const keys = Object.keys(row);
@@ -154,9 +163,14 @@
     return employedKeywords.some(k => t.includes(k));
   }
 
+  // Relatedness check: first ensure explicit NOT-related keywords are respected,
+  // then apply the usual related keywords and the MSU-IIT research assistant rule.
   function isRelatedToCSByText(text) {
     if (!text) return false;
     const t = text.toLowerCase();
+
+    // If this text explicitly matches a NOT-related keyword, treat as NOT related.
+    if (containsAny(t, csNotRelatedKeywords)) return false;
 
     // explicit rule: research assistant at MSU-IIT counts as related
     if (t.includes('research assistant') && (t.includes('msu-iit') || t.includes('msuiit') || t.includes('msu iit'))) return true;
@@ -249,8 +263,17 @@
 
         if (employedFlag) {
           item.employed += 1;
-          // Determine relatedness: prefer 'position' column, otherwise fallback to full row text
-          const related = (positionVal && isRelatedToCSByText(positionVal)) || isRelatedToCSByText(combinedText);
+          // Determine relatedness:
+          // - If the position field explicitly matches a NOT-related keyword, force NOT related.
+          // - Otherwise prefer the position field, then fall back to the full row text.
+          const positionIsExplicitNotRelated = positionVal && containsAny(positionVal, csNotRelatedKeywords);
+          let related = false;
+          if (!positionIsExplicitNotRelated) {
+            related = (positionVal && isRelatedToCSByText(positionVal)) || isRelatedToCSByText(combinedText);
+          } else {
+            related = false;
+          }
+
           if (related) item.relatedEmployed += 1;
           else item.notRelatedEmployed += 1;
         } else if (pursuingFlag) {
