@@ -153,7 +153,7 @@
     let ay = '';
     for (const k of Object.keys(row)) {
       const kn = k.toLowerCase();
-      if (kn.includes('academic year') || kn.includes('graduation') && kn.match(/\d{4}/)) {
+      if (kn.includes('academic year') || (kn.includes('graduation') && kn.match(/\d{4}/))) {
         ay = (row[k] || '').toString().trim();
         if (ay) break;
       }
@@ -317,10 +317,15 @@
 
       // Table of counts per group
       const tableWrap = document.getElementById('countsTable');
+      // clear previous content if any
+      tableWrap.innerHTML = '';
+
       const tbl = document.createElement('table');
+
       const header = document.createElement('thead');
       header.innerHTML = '<tr><th>Academic Year</th><th>Semester</th><th>Total</th><th>Employed</th><th>Employed (related)</th><th>Employed (not related)</th><th>Unemployed pursuing</th><th>Unemployed</th></tr>';
       tbl.appendChild(header);
+
       const body = document.createElement('tbody');
       groupArray.forEach(g => {
         const tr = document.createElement('tr');
