@@ -5,84 +5,57 @@
   <title>BSCS Alumni — Stats & Charts (updated)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    /* Page and centered container */
-    body { font-family: Arial, Helvetica, sans-serif; margin: 0; color:#222; background: #fff; }
-    .container { max-width: 1100px; margin: 18px auto; padding: 0 16px; }
-
+    body { font-family: Arial, Helvetica, sans-serif; margin: 18px; color:#222 }
     h1,h2 { margin: 8px 0; }
-    .charts { display:flex; flex-wrap:wrap; gap:24px; justify-content:center; }
-    /* Constrain each card so charts don't stretch to full page width */
-    .chart-card {
-      flex: 0 1 480px;
-      width: 100%;
-      max-width: 480px;
-      min-width: 320px;
-      padding:12px;
-      border:1px solid #e0e0e0;
-      border-radius:8px;
-      background:#fafafa;
-      box-sizing: border-box;
-    }
-    /* Canvas fills its card but the card itself is constrained */
-    canvas { width:100%; height:320px; display:block; }
-
+    .charts { display:flex; flex-wrap:wrap; gap:24px; }
+    .chart-card { flex: 1 1 480px; min-width:320px; padding:12px; border:1px solid #e0e0e0; border-radius:8px; background:#fafafa; }
+    canvas { width:100% !important; height:320px !important; }
     table { border-collapse: collapse; width:100%; margin-top:12px }
     th,td { text-align:left; padding:6px 8px; border-bottom:1px solid #eee; font-size:14px; }
     .note { font-size:13px; color:#555; margin-top:12px; }
     .loader { color:#666; margin-top:12px; }
     pre.small { font-size:12px; color:#666; background:#f8f8f8; padding:8px; border-radius:6px; }
-
-    /* Make layout more compact on very small screens */
-    @media (max-width: 520px) {
-      .container { padding: 0 8px; }
-      .chart-card { min-width: auto; max-width: 100%; }
-      canvas { height:260px; }
-    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>BSCS Alumni — Summary (updated rules)</h1>
-    <p class="note">
-      Data loaded from the CSV in this repo (commit: 12904fe4...). Classification rules updated per your instructions:
-      - The script prefers the "status 2 years after graduation" column (flexible matching) to determine employed status.
-      - The "position" column is used as the job description to decide whether a job is related to computer science.
-      - If "No. of Employment" is non-zero and the status column value is "employed", that alumni is treated as employed.
-      - "Research assistant" at MSU-IIT is explicitly counted as related to computer science.
-    </p>
+  <h1>BSCS Alumni — Summary (updated rules)</h1>
+  <p class="note">
+    Data loaded from the CSV in this repo (commit: 12904fe4...). Classification rules updated per your instructions:
+    - The script prefers the "status 2 years after graduation" column (flexible matching) to determine employed status.
+    - The "position" column is used as the job description to decide whether a job is related to computer science.
+    - If "No. of Employment" is non-zero and the status column value is "employed", that alumni is treated as employed.
+    - "Research assistant" at MSU-IIT is explicitly counted as related to computer science.
+  </p>
 
-    <div id="status" class="loader">Loading and processing CSV — please wait...</div>
+  <div id="status" class="loader">Loading and processing CSV — please wait...</div>
 
-    <div class="charts" id="charts" style="display:none">
-      <div class="chart-card">
-        <h2>Graduates per Academic Year & Semester</h2>
-        <canvas id="graduatesChart"></canvas>
-      </div>
-
-      <div class="chart-card">
-        <h2>Employment status per Academic Year & Semester</h2>
-        <canvas id="employmentStackedChart"></canvas>
-      </div>
-
-      <div class="chart-card">
-        <h2>Employed: Related to CS vs Not related (overall)</h2>
-        <canvas id="relatedChart"></canvas>
-      </div>
+  <div class="charts" id="charts" style="display:none">
+    <div class="chart-card">
+      <h2>Graduates per Academic Year & Semester</h2>
+      <canvas id="graduatesChart"></canvas>
     </div>
 
-    <div id="tables" style="display:none; margin-top:18px">
-      <h2>Raw counts</h2>
-      <div id="countsTable"></div>
+    <div class="chart-card">
+      <h2>Employment status per Academic Year & Semester</h2>
+      <canvas id="employmentStackedChart"></canvas>
     </div>
+
+    <div class="chart-card">
+      <h2>Employed: Related to CS vs Not related (overall)</h2>
+      <canvas id="relatedChart"></canvas>
+    </div>
+  </div>
+
+  <div id="tables" style="display:none; margin-top:18px">
+    <h2>Raw counts</h2>
+    <div id="countsTable"></div>
   </div>
 
 <script>
 (() => {
-  //const csvUrl = 'https://github.com/liezcd/cs_alumnitracerdata/blob/52e92625cfa5b8519084381920beee80a1f0e45b/BSCSAlumniTracerData_consolidated.csv';
-  const csvURL = "https://raw.githubusercontent.com/liezcd/cs_alumnitracerdata/52e92625cfa5b8519084381920beee80a1f0e45b/BSCSAlumniTracerData_consolidated.csv";
-  //const csvUrl = "https://raw.githubusercontent.com/liezcd/cs_alumnitracer/9af2ebd79979911bf23066f514d72021accf13eb/BSCSAlumniTracerData_consolidated.csv";
+  const csvUrl = 'https://github.com/liezcd/cs_alumnitracerdata/blob/52e92625cfa5b8519084381920beee80a1f0e45b/BSCSAlumniTracerData_consolidated.csv';
   const statusEl = document.getElementById('status');
 
   // Heuristic keyword lists
@@ -91,15 +64,6 @@
   const csRelatedKeywords = [
     'software','developer','engineer','programmer','it','information technology','computer','data','web','frontend','backend','full-stack','full stack',
     'system','systems','devops','mobile','android','ios','qa','quality assurance','research assistant','researcher','msu-iit','msu iit','msuiit','ai','machine learning','ml','data scientist'
-  ];
-
-  // Explicitly NOT CS-related position keywords (user provided)
-  const csNotRelatedKeywords = [
-    'sharepoint lead',
-    'in-house artist','in house artist',
-    'assistant colorist',
-    'real estate data entry clerk',
-    'administrative support ii','administrative support 2','administrative support'
   ];
 
   // Helper: find a CSV field key by regex
@@ -165,14 +129,9 @@
     return employedKeywords.some(k => t.includes(k));
   }
 
-  // Relatedness check: first ensure explicit NOT-related keywords are respected,
-  // then apply the usual related keywords and the MSU-IIT research assistant rule.
   function isRelatedToCSByText(text) {
     if (!text) return false;
     const t = text.toLowerCase();
-
-    // If this text explicitly matches a NOT-related keyword, treat as NOT related.
-    if (containsAny(t, csNotRelatedKeywords)) return false;
 
     // explicit rule: research assistant at MSU-IIT counts as related
     if (t.includes('research assistant') && (t.includes('msu-iit') || t.includes('msuiit') || t.includes('msu iit'))) return true;
@@ -265,17 +224,8 @@
 
         if (employedFlag) {
           item.employed += 1;
-          // Determine relatedness:
-          // - If the position field explicitly matches a NOT-related keyword, force NOT related.
-          // - Otherwise prefer the position field, then fall back to the full row text.
-          const positionIsExplicitNotRelated = positionVal && containsAny(positionVal, csNotRelatedKeywords);
-          let related = false;
-          if (!positionIsExplicitNotRelated) {
-            related = (positionVal && isRelatedToCSByText(positionVal)) || isRelatedToCSByText(combinedText);
-          } else {
-            related = false;
-          }
-
+          // Determine relatedness: prefer 'position' column, otherwise fallback to full row text
+          const related = (positionVal && isRelatedToCSByText(positionVal)) || isRelatedToCSByText(combinedText);
           if (related) item.relatedEmployed += 1;
           else item.notRelatedEmployed += 1;
         } else if (pursuingFlag) {
